@@ -22,4 +22,10 @@ public class commande implements Serializable{
         this.parameter = p;
         this.option = o;
     }
+
+    @Override
+    public String toString()
+    {
+        return this.action + " " + this.parameter + " " + this.option;
+    }
 }

@@ -19,17 +19,27 @@ public class client {
         }
         return new commande("");
     }
+
 	public static void main(String[] args) throws Exception
 	{    
-        System.out.println("Entrer l'adresse IP et le port d'ecoute: ");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));  
-        String[] userInput = br.readLine().split(" ");
-
-		String serverAddress = userInput[0];
-		int port = Integer.parseInt(userInput[1]);
-		
-		socket = new Socket(serverAddress, port);
-        System.out.format("The server is running on %s:%d%n", serverAddress, port);
+        
+        boolean isConnected = false;
+        while(!isConnected)
+        {
+            try
+            {
+                System.out.println("Entrer l'adresse IP et le port d'ecoute: ");
+                String[] userInput = br.readLine().split(" ");
+                String serverAddress = userInput[0];
+		        int port = Integer.parseInt(userInput[1]);
+                socket = new Socket(serverAddress, port);
+                isConnected = true;	
+            }
+            catch (Exception e) {
+                System.out.println("La connection avec le serveur à échouer. Veuillez-réessayer.");
+            }
+        }
 		
 		DataInputStream in = new DataInputStream(socket.getInputStream());
 		DataOutputStream out = new DataOutputStream(socket.getOutputStream());

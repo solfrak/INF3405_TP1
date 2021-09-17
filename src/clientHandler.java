@@ -5,11 +5,20 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class clientHandler extends Thread {
 	private Socket socket;
 	private int clientNumber;
 	private String clientDirecPath = "C:/";
+	private DataOutputStream out;
+	private DataInputStream in;
+	private ObjectOutputStream objOut;
+	private ObjectInputStream objIn;
+	private File file = new File(clientDirecPath);
+
+
 	public clientHandler(Socket socket, int clientNumber)
 	{
 		this.socket = socket;
@@ -19,48 +28,78 @@ public class clientHandler extends Thread {
 
 	public String lsCommand() 
 	{
-		File f = new File(clientDirecPath);
 		String directory = "";
-		for(int i =0; i < f.list().length; i++)
+		for(int i =0; i < file.list().length; i++)
 		{
-			directory += f.list()[i] + "\n";
+			directory += "\t" +file.list()[i] + "\n";
 		}
 		return directory;
 	}
 
-	public void cdCommand(String folder)
+	public boolean cdCommand(String folder) throws IOException
 	{
-		if(folder =="..")
-		{
-
+		if(folder.equals("..")) {
+			String[] pathSplStrings = clientDirecPath.split("/");
+			clientDirecPath = "";
+			if(pathSplStrings.length != 1)
+			{
+				for(int i = 0; i < pathSplStrings.length - 1; i++)
+				{
+					clientDirecPath += pathSplStrings[i] + "/";
+				}
+				file = null;
+				file = new File(clientDirecPath);
+			}
+			return true;
 		}
 		else{
-			clientDirecPath += "/" + folder;
+			File tempFile = file;
+			//pour libérer la mémoire allouer précédement
+			file = null;
+			clientDirecPath += folder + "/";
+			file = new File(clientDirecPath);
+			if(!file.exists())
+			{
+				file = null;
+				file = tempFile;
+				String message = "Erreur: aucun dossier du nom de: " + folder + " existe";
+				out.writeUTF(message);
+				return false;
+			}
+			return true;
 		}
 	}
 	public void run()
 	{
 		try
 		{
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-			out.writeUTF("Hello from server = you are client #" + clientNumber);
-            ObjectOutputStream objOut = new ObjectOutputStream(out);
-            ObjectInputStream objIn = new ObjectInputStream(in);
+			out = new DataOutputStream(socket.getOutputStream());
+            in = new DataInputStream(socket.getInputStream());
+			out.writeUTF("La connection avec le serveur est établie");
+            objOut = new ObjectOutputStream(out);
+            objIn = new ObjectInputStream(in);
             String message = "";
             while(true)
             {
                 try {
                     commande c = (commande) objIn.readObject();
+					DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-DD @ HH:mm:ss");
+					String date = LocalDateTime.now().format(dtf).toString();
+					String logMessage = "[" + socket.getInetAddress().toString().replaceAll("/", "") +":" + socket.getPort() + "//" + date + "] ";
+					System.out.println(logMessage + c.toString());
 					switch (c.action) {
-						case "ls": {
+						case "ls": 
+						{
 							String answer = lsCommand();
 							out.writeUTF(answer);
 						}
 							break;
-						case "cd": {
-							cdCommand(c.parameter);
-							out.writeUTF("Cd done correctly");
+						case "cd": 
+						{
+							if(cdCommand(c.parameter))
+							{
+								out.writeUTF("Cd done correctly");
+							}
 						}
 							break;
 						case "mkdir":
@@ -73,15 +112,10 @@ public class clientHandler extends Thread {
 							break;
 						default:
 							break;
-					}
-
-                    System.out.println("Client send commande: " + c.action + ", " + c.parameter);
-					
+					}					
 				} catch (Exception e) {
 					//TODO: handle exception
 				}
-                    // message = in.readUTF();
-                    // System.out.println("Client say: " + message);
             }
 		} catch (IOException e) {
 			System.out.println("Error handling client #" + clientNumber + ": " + e);
