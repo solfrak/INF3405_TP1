@@ -46,8 +46,7 @@ public class client {
             commande c = processMessage(messageToSend);
             objOut.writeObject(c);
             objOut.flush();
-            // out.writeUTF(messageToSend);
-            // out.flush();
+            System.out.println(in.readUTF());
         }
 
 		socket.close();

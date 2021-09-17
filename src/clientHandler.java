@@ -1,5 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -8,17 +9,35 @@ import java.net.Socket;
 public class clientHandler extends Thread {
 	private Socket socket;
 	private int clientNumber;
-
+	private String clientDirecPath = "C:/";
 	public clientHandler(Socket socket, int clientNumber)
 	{
 		this.socket = socket;
 		this.clientNumber = clientNumber;
 		System.out.println("New connection with client #" + clientNumber + " at " + socket);
 	}
-	
 
+	public String lsCommand() 
+	{
+		File f = new File(clientDirecPath);
+		String directory = "";
+		for(int i =0; i < f.list().length; i++)
+		{
+			directory += f.list()[i] + "\n";
+		}
+		return directory;
+	}
 
+	public void cdCommand(String folder)
+	{
+		if(folder =="..")
+		{
 
+		}
+		else{
+			clientDirecPath += "/" + folder;
+		}
+	}
 	public void run()
 	{
 		try
@@ -34,9 +53,15 @@ public class clientHandler extends Thread {
                 try {
                     commande c = (commande) objIn.readObject();
 					switch (c.action) {
-						case "ls": 
+						case "ls": {
+							String answer = lsCommand();
+							out.writeUTF(answer);
+						}
 							break;
-						case "cd":
+						case "cd": {
+							cdCommand(c.parameter);
+							out.writeUTF("Cd done correctly");
+						}
 							break;
 						case "mkdir":
 							break;
