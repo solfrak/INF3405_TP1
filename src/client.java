@@ -7,6 +7,8 @@ import java.io.*;
 
 public class client {
 	private static Socket socket;
+    static DataOutputStream out;
+    static ObjectOutputStream objOut;
 
 	public static commande processMessage(String message)
     {
@@ -20,6 +22,17 @@ public class client {
         return new commande("");
     }
 
+    public static void uploadCommand(String filename) throws IOException
+    {
+        
+        FileInputStream fis = new FileInputStream(filename);
+        byte[] buffer = new byte[4096];
+        while(fis.read(buffer) > 0)
+        {
+            out.write(buffer);
+        }
+        fis.close();
+    }
 	public static void main(String[] args) throws Exception
 	{    
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));  
@@ -42,10 +55,10 @@ public class client {
         }
 		
 		DataInputStream in = new DataInputStream(socket.getInputStream());
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+		out = new DataOutputStream(socket.getOutputStream());
 		String helloMessageFromServer = in.readUTF();
         ObjectInputStream objIn = new ObjectInputStream(in);
-        ObjectOutputStream objOut = new ObjectOutputStream(out);
+        objOut = new ObjectOutputStream(out);
 		System.out.println(helloMessageFromServer);
         boolean test = true;
         String messageToSend = "";
@@ -54,6 +67,16 @@ public class client {
         {
             messageToSend = br.readLine();
             commande c = processMessage(messageToSend);
+            if(c.action.equals("upload"))
+            {
+                File file = new File(c.parameter);
+                c.option = String.valueOf(file.length());
+                objOut.writeObject(c);
+                uploadCommand(c.parameter);
+            }
+            else {
+
+            }
             objOut.writeObject(c);
             objOut.flush();
             System.out.println(in.readUTF());

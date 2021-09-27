@@ -1,17 +1,19 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.Buffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class clientHandler extends Thread {
 	private Socket socket;
 	private int clientNumber;
-	private String clientDirecPath = "C:/";
+	private String clientDirecPath = "/";
 	private DataOutputStream out;
 	private DataInputStream in;
 	private ObjectOutputStream objOut;
@@ -69,6 +71,43 @@ public class clientHandler extends Thread {
 			return true;
 		}
 	}
+	public boolean mkdirCommand(String name)
+	{
+		file = null;
+		String tempPath = clientDirecPath + name + "/";
+		file = new File(tempPath);
+		boolean ans = file.mkdir();
+		file = null;
+		file = new File(clientDirecPath);
+		return ans;
+		
+	}
+
+	public boolean deleteCommand(String name)
+	{
+		file = null;
+		String tempPath = clientDirecPath + name + "/";
+		file = new File(tempPath);
+		boolean ans = file.delete();
+		file = null;
+		file = new File(clientDirecPath);
+		return ans;
+	}
+
+	public void uploadCommand(String namefile, String filesize) throws IOException
+	{
+		int fileS = Integer.parseInt(filesize);
+		FileOutputStream fos = new FileOutputStream(namefile);
+		byte[] buffer = new byte[4096];
+		int read = 0;
+		int remaining = fileS;
+		while((read = in.read(buffer, 0, Math.min(buffer.length, remaining))) > 0) {
+			remaining -= read;
+			fos.write(buffer, 0, read);
+		}
+		fos.close();
+	}
+	
 	public void run()
 	{
 		try
@@ -103,10 +142,28 @@ public class clientHandler extends Thread {
 						}
 							break;
 						case "mkdir":
+							if(mkdirCommand(c.parameter))
+							{
+								out.writeUTF("GOOD");
+							}
+							else
+							{
+								out.writeUTF("NO GOOD");
+							}
 							break;
 						case "delete":
+							if(deleteCommand(c.parameter))
+							{
+								out.writeUTF("GOOD");
+							}
+							else 
+							{
+								out.writeUTF("NO GOOD");
+							}
 							break;
 						case "upload":
+							uploadCommand(c.parameter, c.option);
+							out.writeUTF("good");
 							break;
 						case "download":
 							break;
