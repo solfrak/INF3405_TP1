@@ -168,6 +168,7 @@ public class clientHandler extends Thread {
 						case "download":
 							break;
 						default:
+							out.writeUTF("commande non reconnue");
 							break;
 					}					
 				} catch (Exception e) {

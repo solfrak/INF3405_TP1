@@ -7,7 +7,7 @@ public class server {
     public static void main(String[] args) throws Exception {
         int clientNumber = 0;
 
-        String serverAddress = "127.0.0.1";
+        String serverAddress = "10.200.32.154";
         int serverPort = 5030;
 
         ServerSocket listener = new ServerSocket();
