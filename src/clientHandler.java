@@ -49,10 +49,6 @@ public class clientHandler extends Thread {
 		if(folder.equals("..")) {
 			String[] pathSplStrings = clientDirecPath.split("/");
 			clientDirecPath = "";
-			for(int i = 0; i < pathSplStrings.length; i++)
-			{
-				System.out.println(pathSplStrings[i]);
-			}
 			
 			if(!pathSplStrings[pathSplStrings.length - 1].equals("ServerRoot"))
 			{
@@ -105,7 +101,7 @@ public class clientHandler extends Thread {
 		return ans;
 	}
 
-	public void uploadCommand(String namefile, String filesize) throws IOException
+	public boolean uploadCommand(String namefile, String filesize) throws IOException
 	{
 		int fileS = Integer.parseInt(filesize);
 		FileOutputStream fos = new FileOutputStream(clientDirecPath + namefile);
@@ -117,6 +113,7 @@ public class clientHandler extends Thread {
 			fos.write(buffer, 0, read);
 		}
 		fos.close();
+		return true;
 	}
 	
 	public void downloadCommand(String namefile, boolean isZip) throws IOException
@@ -146,7 +143,8 @@ public class clientHandler extends Thread {
             while(true)
             {
                 try {
-                    commande c = (commande) objIn.readObject();
+                	System.out.println("waiting for commande");
+                	commande c = (commande) objIn.readObject();                		
 					DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-DD @ HH:mm:ss");
 					String date = LocalDateTime.now().format(dtf).toString();
 					String logMessage = "[" + socket.getInetAddress().toString().replaceAll("/", "") +":" + socket.getPort() + "//" + date + "] ";
@@ -187,8 +185,10 @@ public class clientHandler extends Thread {
 							}
 							break;
 						case "upload":
-							uploadCommand(c.parameter, c.option);
-							out.writeUTF("good");
+							if(uploadCommand(c.parameter, c.option))
+							{
+								out.writeUTF("good");								
+							}
 							break;
 						case "download":
 							break;
@@ -198,6 +198,7 @@ public class clientHandler extends Thread {
 					}					
 				} catch (Exception e) {
 					//TODO: handle exception
+					System.out.println(e);
 				}
             }
 		} catch (IOException e) {

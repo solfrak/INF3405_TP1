@@ -27,6 +27,8 @@ public class client {
         {
             out.write(buffer);
         }
+        out.flush();
+//        out.close();
         fis.close();
     }
 	public static void main(String[] args) throws Exception
@@ -68,9 +70,11 @@ public class client {
                 File file = new File(c.parameter);
                 c.option = String.valueOf(file.length());
                 objOut.writeObject(c);
+                objOut.flush();
                 uploadCommand(c.parameter);
             }
             else if(c.action.equals("download")){
+            	
             	int size = in.read();
             	FileOutputStream fos = new FileOutputStream(c.parameter);
             	byte[] buffer = new byte[4096];
@@ -82,8 +86,10 @@ public class client {
         		}
         		fos.close();
             }
-            objOut.writeObject(c);
-            objOut.flush();
+            else {
+            	objOut.writeObject(c);
+            	objOut.flush();            	
+            }
             System.out.println(in.readUTF());
         }
 
