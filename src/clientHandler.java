@@ -1,11 +1,13 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.nio.Buffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,19 +15,22 @@ import java.time.format.DateTimeFormatter;
 public class clientHandler extends Thread {
 	private Socket socket;
 	private int clientNumber;
-	private String clientDirecPath = "/";
 	private DataOutputStream out;
 	private DataInputStream in;
+	private String clientDirecPath;
 	private ObjectOutputStream objOut;
 	private ObjectInputStream objIn;
-	private File file = new File(clientDirecPath);
+	private File file;
 
 
-	public clientHandler(Socket socket, int clientNumber)
+	public clientHandler(Socket socket, int clientNumber) throws URISyntaxException
 	{
 		this.socket = socket;
 		this.clientNumber = clientNumber;
 		System.out.println("New connection with client #" + clientNumber + " at " + socket);
+		clientDirecPath = server.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+		clientDirecPath += "ServerRoot/";
+		file = new File(clientDirecPath);
 	}
 
 	public String lsCommand() 
@@ -33,6 +38,7 @@ public class clientHandler extends Thread {
 		String directory = "";
 		for(int i =0; i < file.list().length; i++)
 		{
+			
 			directory += "\t" +file.list()[i] + "\n";
 		}
 		return directory;
@@ -43,7 +49,12 @@ public class clientHandler extends Thread {
 		if(folder.equals("..")) {
 			String[] pathSplStrings = clientDirecPath.split("/");
 			clientDirecPath = "";
-			if(pathSplStrings.length != 1)
+			for(int i = 0; i < pathSplStrings.length; i++)
+			{
+				System.out.println(pathSplStrings[i]);
+			}
+			
+			if(!pathSplStrings[pathSplStrings.length - 1].equals("ServerRoot"))
 			{
 				for(int i = 0; i < pathSplStrings.length - 1; i++)
 				{
@@ -97,7 +108,7 @@ public class clientHandler extends Thread {
 	public void uploadCommand(String namefile, String filesize) throws IOException
 	{
 		int fileS = Integer.parseInt(filesize);
-		FileOutputStream fos = new FileOutputStream(namefile);
+		FileOutputStream fos = new FileOutputStream(clientDirecPath + namefile);
 		byte[] buffer = new byte[4096];
 		int read = 0;
 		int remaining = fileS;
@@ -106,6 +117,20 @@ public class clientHandler extends Thread {
 			fos.write(buffer, 0, read);
 		}
 		fos.close();
+	}
+	
+	public void downloadCommand(String namefile, boolean isZip) throws IOException
+	{
+		FileInputStream fis = new FileInputStream(clientDirecPath + namefile);
+		File tempFile = new File(clientDirecPath + namefile);
+		int size = (int)tempFile.length();
+		out.write(size);
+		byte[] buffer = new byte[4096];
+		while(fis.read(buffer) > 0)
+        {
+            out.write(buffer);
+        }
+		fis.close();
 	}
 	
 	public void run()

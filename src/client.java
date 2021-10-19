@@ -1,8 +1,4 @@
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.net.Socket;
-import java.io.InputStreamReader;
 import java.io.*;
 
 public class client {
@@ -42,15 +38,15 @@ public class client {
         {
             try
             {
-                System.out.println("Entrer l'adresse IP et le port d'ecoute: ");
-                String[] userInput = br.readLine().split(" ");
-                String serverAddress = userInput[0];
-		        int port = Integer.parseInt(userInput[1]);
+                System.out.println("Entrer l'adresse IP du serveur: ");
+                String serverAddress = br.readLine();
+                System.out.println("Entrer le port du serveur: ");
+                int port = Integer.parseInt(br.readLine());
                 socket = new Socket(serverAddress, port);
                 isConnected = true;	
             }
             catch (Exception e) {
-                System.out.println("La connection avec le serveur à échouer. Veuillez-réessayer.");
+                System.out.println("La connection avec le serveur a echouer. Veuillez-reessayer.");
             }
         }
 		
@@ -74,8 +70,17 @@ public class client {
                 objOut.writeObject(c);
                 uploadCommand(c.parameter);
             }
-            else {
-
+            else if(c.action.equals("download")){
+            	int size = in.read();
+            	FileOutputStream fos = new FileOutputStream(c.parameter);
+            	byte[] buffer = new byte[4096];
+        		int read = 0;
+        		int remaining = size;
+        		while((read = in.read(buffer, 0, Math.min(buffer.length, remaining))) > 0) {
+        			remaining -= read;
+        			fos.write(buffer, 0, read);
+        		}
+        		fos.close();
             }
             objOut.writeObject(c);
             objOut.flush();
